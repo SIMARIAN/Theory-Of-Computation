@@ -1,0 +1,46 @@
+#include <iostream>
+#include <string>
+#include <stack>
+using namespace std;
+
+void Read1(const string& w, stack<char>& st, int i);
+void Read2(const string& w, stack<char>& st, int i);
+
+int main() {
+    string str;
+    cout << "Enter the string: ";
+    cin >> str;
+    stack<char> st;
+    Read1(str, st, 0);
+    return 0;}
+
+void Read1(const string& w, stack<char>& st, int i) {
+    cout << "Read1 at " << i << endl;
+    if (w[i] == 'a') {
+        st.push('a');
+        Read1(w, st, i + 1);
+        return;}
+    if (w[i] == 'b') {
+        st.push('b');
+        Read1(w, st, i + 1);
+        return;}
+    if (w[i] == 'X')
+        return Read2(w, st, i + 1);
+    cout << "String is rejected\n";}
+
+void Read2(const string& w, stack<char>& st, int i) {
+    cout << "Read2 at " << i << endl;
+    if (i == w.length() && st.empty()){
+        cout << "String is accepted\n";
+        return;}
+    if (w[i] == 'a')
+        if (!st.empty() && st.top() == 'a'){
+            st.pop();
+            Read2(w, st, i + 1);
+            return;}
+    if (w[i] == 'b')
+        if (!st.empty() && st.top() == 'b'){
+            st.pop();
+            Read2(w, st, i + 1);
+            return;}
+    cout << "String is rejected\n";}
