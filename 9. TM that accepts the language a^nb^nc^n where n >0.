@@ -1,0 +1,41 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+void moveRightToNext(string &tape, int &head, char target);
+bool process(string &tape);
+
+int main() {
+    string tape;
+    cout << "Enter string: ";
+    cin >> tape;
+    if (process(tape))
+        cout << "String is accepted\n";
+    else
+        cout << "String is rejected\n";
+    return 0;
+}
+
+void moveRightToNext(string &tape, int &head, char target){
+    while (head < (int)tape.size() && tape[head] != target) head++;}
+
+bool process(string &tape) {
+    int head = 0;
+    while (true) {
+        moveRightToNext(tape, head, 'a');
+        if (head == tape.size()) break;
+        tape[head] = 'd';
+        head++;
+        moveRightToNext(tape, head, 'b');
+        if (head == tape.size()) return false;
+        tape[head] = 'd';
+        head++;
+        moveRightToNext(tape, head, 'c');
+        if (head == tape.size()) return false;
+        tape[head] = 'd';
+        head = 0;
+    }
+    for (int i=0; i<tape.size(); i++)
+        if (tape[i] != 'd') return false;
+    return true;
+}
