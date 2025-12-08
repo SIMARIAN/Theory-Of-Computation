@@ -1,0 +1,390 @@
+Q1. Write a program to perform encryption and decryption using Caesar cipher (substitutional cipher). 
+def encrypt (text,s):
+    result = ""
+    for i in range(len(text)):
+        char = text[i]
+        if (char.isupper()):
+            result += chr((ord(char)+s-65)%26+65)
+        else:
+            result += chr((ord(char)+s-97)%26+97)
+    return result
+text = input("enter any text without space ")
+s = int(input("enter any number "))
+cipher = encrypt(text,s)
+decipher = encrypt(cipher,26-s)
+print("Text: " + text)
+print("Shift: " + str(s))
+print("Cipher: " + cipher)
+print("Decipher: " + decipher)
+
+Q2. Write a program to perform encryption and decryption using Rail Fence Cipher (transpositional cipher)
+def encryptRailFence(text, key):
+    rail = [['\n' for i in range(len(text))] for j in range(key)]
+    dir_down = False
+    row,col = 0,0
+    for i in range(len(text)):
+        if (row == 0) or (row == key - 1):
+            dir_down = not dir_down
+        rail[row][col] = text[i]
+        col += 1
+        if dir_down:
+            row += 1
+        else:
+            row -= 1
+    result = []
+    for i in range(key):
+        for j in range(len(text)):
+            if rail[i][j] != '\n':
+                result.append(rail[i][j])
+    return("".join(result))
+def decryptRailFence(cipher, key):
+    rail = [['\n' for i in range(len(cipher))] for j in range(key)]
+    dir_down = None
+    row,col = 0,0
+    for i in range(len(cipher)):
+        if row == 0:
+            dir_down = True
+        if row == key - 1:
+            dir_down = False
+        rail[row][col] = '+'
+        col += 1
+        if dir_down:
+            row += 1
+        else:
+            row -= 1
+    index = 0
+    for i in range(key):
+        for j in range(len(cipher)):
+            if ((rail[i][j] == '+') and (index < len(cipher))):
+                rail[i][j] = cipher[index]
+                index += 1
+    result = []
+    row, col = 0, 0
+    for i in range(len(cipher)):
+        if row == 0:
+            dir_down = True
+        if row == key - 1:
+            dir_down = False
+        if (rail[row][col] != '\n'):
+            result.append(rail[row][col])
+        col += 1
+        if dir_down:
+            row += 1
+        else:
+            row -= 1
+    return("".join(result))
+print("encrypted: " + encryptRailFence("K", 2))
+print("decrypted: " + decryptRailFence("K", 2))
+
+Q3. Write a Python program that defines a function and takes a password string as input and returns its SHA-256 hashed representation as a hexadecimal string.
+import struct
+# SHA-256 constants (first 32 bits of the fractional parts of the cube roots of the first 64 primes)
+K =[0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]
+# Initial hash values (first 32 bits of the fractional parts of the square roots of the first 8 primes)
+H =[0x6a09e667,
+    0xbb67ae85,
+    0x3c6ef372,
+    0xa54ff53a,
+    0x510e527f,
+    0x9b05688c,
+    0x1f83d9ab,
+    0x5be0cd19]
+def right_rotate(n, d):
+    return ((n >> d) | (n << (32 - d))) & 0xFFFFFFFF
+
+def sha256(message: str) -> str:
+    # Convert message to bytes
+    message = message.encode()
+    # Pre-processing: Padding
+    message_bit_length = len(message) * 8
+    message += b"\x80"  # append the bit '1'
+    while (len(message) * 8 + 64) % 512 != 0:
+        message += b"\x00"
+    message += struct.pack(">Q", message_bit_length)
+    # Process the message in 512-bit chunks
+    hash_pieces = H[:]
+    for chunk_start in range(0, len(message), 64):
+        chunk = message[chunk_start:chunk_start + 64]
+        w = list(struct.unpack(">16L", chunk)) + [0] * 48
+        for i in range(16, 64):
+            s0 = (right_rotate(w[i - 15], 7) ^
+                  right_rotate(w[i - 15], 18) ^
+                  (w[i - 15] >> 3))
+            s1 = (right_rotate(w[i - 2], 17) ^
+                  right_rotate(w[i - 2], 19) ^
+                  (w[i - 2] >> 10))
+            w[i] = (w[i - 16] + s0 + w[i - 7] + s1) & 0xFFFFFFFF
+        a, b, c, d, e, f, g, h = hash_pieces
+        for i in range(64):
+            S1 = (right_rotate(e, 6) ^
+                  right_rotate(e, 11) ^
+                  right_rotate(e, 25))
+            ch = (e & f) ^ ((~e) & g)
+            temp1 = (h + S1 + ch + K[i] + w[i]) & 0xFFFFFFFF
+            S0 = (right_rotate(a, 2) ^
+                  right_rotate(a, 13) ^
+                  right_rotate(a, 22))
+            maj = (a & b) ^ (a & c) ^ (b & c)
+            temp2 = (S0 + maj) & 0xFFFFFFFF
+            h = g
+            g = f
+            f = e
+            e = (d + temp1) & 0xFFFFFFFF
+            d = c
+            c = b
+            b = a
+            a = (temp1 + temp2) & 0xFFFFFFFF
+        hash_pieces = [(hp + val) & 0xFFFFFFFF
+            for hp, val in zip(hash_pieces, [a, b, c, d, e, f, g, h])]
+    return ''.join(f"{piece:08x}" for piece in hash_pieces)
+password = input("Enter your password: ")
+print("SHA-256 Hashed Password:", sha256(password))
+
+Q4. Write a Python program that reads a file containing a list of usernames and passwords, one pair per line (separated by a comma). It checks each password to see if it has been leaked in a data breach using "Have I Been Pwned" API.
+import hashlib
+import requests
+def check_password_pwned(password):
+    sha1_hash = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
+    prefix, suffix = sha1_hash[:5], sha1_hash[5:]
+    url = f"https://api.pwnedpasswords.com/range/{prefix}"
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise RuntimeError(f"API request failed with status code {response.status_code}")
+    for line in response.text.splitlines():
+        hash_suffix, count = line.split(":")
+        if hash_suffix == suffix:
+            return int(count)
+    return 0
+def check_file(filename):
+    with open(filename, "r", encoding="utf-8") as file:
+        for line in file:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                username, password = line.split(",", 1)
+            except ValueError:
+                print(f"Invalid line format: {line}")
+                continue
+            count = check_password_pwned(password)
+            if count:
+                print(f"{username}'s password was found {count} times in breaches!")
+            else:
+                print(f"{username}'s password was NOT found in breaches.")
+check_file('dict1.txt')
+
+Q5. Write a Python program that generates a password using a random combination of words from a dictionary file.
+import secrets
+import string
+from pathlib import Path
+def load_words(dict_path: str):
+    p = Path(dict_path)
+    if not p.exists():
+        raise FileNotFoundError(f"Dictionary file not found: {dict_path}")
+    words = []
+    with p.open("r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            w = line.strip()
+            if w:
+                words.append(w)
+    if not words:
+        raise ValueError("Dictionary file contains no usable words.")
+    return words
+def generate_password(words, num_words=4, separator='-', cap=False, add_number=True, add_symbol=True):
+    chosen = []
+    for _ in range(num_words):
+        w = secrets.choice(words)
+        if cap:
+            w = w.capitalize()
+        chosen.append(w)
+    pwd = separator.join(chosen)
+    if add_number:
+        pwd += secrets.choice(string.digits)
+    if add_symbol:
+        symbols = "!@#%&*?"
+        pwd += secrets.choice(symbols)
+    return pwd
+dict_file = "dict1.txt"
+try:
+    words = load_words(dict_file)
+except Exception as e:
+    print("Error:", e)
+num = int(input("Number of words to use: "))
+separator = input("Separator between words: ")
+cap_inp = input("Capitalize words? (y/n): ").lower() == "n"
+add_num = input("Append a digit? (y/n): ").lower() != "n"
+add_sym = input("Append a symbol? (y/n): ").lower() != "n"
+password = generate_password(words,num,separator,cap_inp,add_num,add_sym)
+print("Generated password:")
+print(password)
+
+6)Write a Python program that simulates a brute-force attack on a password by trying out all possible character combinations.
+import itertools
+import string
+import time
+def brute_force(target):
+    charset = "abcde12345#@"
+    attempts=0
+    for length in range(5):
+        for guess in itertools.product(chars, repeat=length):
+            attempts += 1
+            if ''.join(guess) == target:
+                print(f"Password '{target}' cracked in '{attempts}' attempts.")
+                return
+    print("Password not found.")
+target_password = input("Enter password using abcde12345#@ only: ")
+start = time.time()
+brute_force(target_password)
+print("Time taken:", round(time.time()-start, 2), "seconds")
+
+7)Demonstrate the usage/sending of a digitally signed document
+To send a digitally signed document, the sender creates a unique digital signature using their private key, attaches it to the document, and sends it to the recipient. The recipient can then use the sender's public key to verify the signature, confirming the document's authenticity and integrity. 
+Sender's process
+1.Select the file: Choose the document to be signed, such as a PDF or email message. 
+2.Generate the signature: The sender's software calculates a unique "hash" or fingerprint of the document and encrypts it with the sender's private key. This creates the digital signature. 
+3.Combine and send: The original document is sent along with the digital signature. In some cases, the signature is embedded directly into the file itself. 
+Recipient's process
+1. Receive the document: The recipient receives the document and its accompanying digital signature. 
+2. Decipher the signature: The recipient's application uses the sender's public key to decrypt the digital signature. 
+3. Verify the signature: The recipient's software recalculates the hash of the received document and compares it with the decrypted hash from the signature. 
+4. Confirm integrity: If the two hashes match, the recipient can be sure the document has not been altered since it was signed. The digital signature also proves the document's origin from the sender.
+Key benefits
+1.Authenticity: It verifies the sender's identity. 
+2.Integrity: It ensures the document has not been tampered with after signing. 
+3.Non-repudiation: It prevents the sender from later denying that they signed the document. 
+4.Legality: Digital signatures are legally binding in many jurisdictions, equivalent to a handwritten signature. 
+5.Efficiency: It eliminates the need for printing, signing, scanning, and mailing, streamlining business processes.
+WORD DOCUMENT-
+Open the document you want to sign in Microsoft Word.
+Click on Insert → Signature Line → Microsoft Office Signature Line.
+In the dialog box, enter signer details such as name, title, and email address, then click ok
+A signature line will appear in the document.
+Right-click the signature line and select Sign.
+You can: Type your name,Insert an image of your handwritten signature, or Use a digital certificate if available.
+Save the document. Word will automatically make it a digitally signed file (.docx) and display a signature mark.
+You can now send the signed document via email or any secure platform.
+
+7.. Students needs to conduct a data privacy audit of an organization to identify potential vulnerabilities and risks in their data privacy practices. 
+
+Objective of the Audit: To assess how an educational institute (schools, colleges, universities, edtech platforms) collects, stores, processes, and shares personal data of students, staff, parents, and other stakeholders, and to identify potential vulnerabilities and risks in compliance with the DPDPA 2023.
+The audit should assess compliance with the following principles:
+i.Lawful Purpose – Data is processed only for legitimate educational or administrative purposes.
+ii.Consent & Notice – Data subjects (students, parents, staff) are informed and consent is taken clearly and specifically.
+iii.Data Minimization – Only necessary data is collected.
+iv.Accuracy – Data is up to date and accurate.
+v.Storage Limitation – Data is retained only as long as necessary.
+vi.Security Safeguards – Data is protected from unauthorized access, breaches, or loss.
+vii.Accountability & Transparency – Proper documentation and reporting practices exist.
+
+Area	Key Aspects to Review	Typical Risks / Vulnerabilities
+1. Data Collection Practices	- What data is collected (students, parents, employees)?
+- Purpose for collection.
+- Consent mechanisms in place.
+- Notices and privacy policies issued.	- Collecting excessive or unnecessary personal data.
+- Lack of clear consent or opt-out.
+- Vague or missing privacy notices.
+2. Data Storage and Retention	- Storage locations (servers, cloud).
+- Retention policies.
+- Backup & deletion practices.	- Data stored indefinitely.
+- Unencrypted local or cloud storage.
+- Poor backup security.
+3. Data Processing and Sharing	- Who processes the data (internal departments, vendors)?
+- Data sharing with third parties (e.g., EdTech partners, analytics tools).
+- Data anonymization and pseudonymization practices.	- Sharing data without consent.
+- Inadequate vendor due diligence.
+- Lack of Data Processing Agreements (DPAs).
+4. Data Security Measures	- Access control & authentication.
+- Encryption (in transit & at rest).
+- Incident response & breach notification plan.
+- Physical security of data servers and files.	- Weak passwords / shared credentials.
+- No breach reporting mechanism.
+- Outdated antivirus/firewalls.
+- Poor physical security.
+5. Data Subject Rights Management	- Mechanisms for individuals to access, correct, or delete their data.
+- Complaint handling procedures.	- No process to respond to data subject requests.
+- Untracked or delayed responses.
+- Lack of contact point (Data Protection Officer).
+6. Vendor and Third-party Risk	- Review of contracts with service providers (cloud, LMS, exam software).
+- Compliance status of third parties.	- Vendors outside India not following DPDPA standards.
+- Data transfer without safeguards.
+7. Governance and Accountability	- Appointment of Data Protection Officer (DPO) if required.
+- Training and awareness programs.
+- Regular internal audits.	- No DPO or privacy committee.
+- Lack of audit trails.
+- No training for staff on privacy practices.
+
+8.Students needs to explore the requirements of the Data Protection Regulations and develop a plan for ensuring compliance with the regulation. 
+
+Requirement	Description	Key Actions
+Lawful Basis for Processing	Data can only be processed with consent or for a lawful purpose (e.g., employment, academic administration).	Identify all lawful bases for processing; obtain explicit consent where necessary.
+Transparency	Inform individuals about how their data is collected, used, shared, and retained.	Maintain a clear and accessible Privacy Notice and Consent Form.
+Data Minimization	Collect only the data required for the specific purpose.	Conduct data mapping to remove unnecessary data points.
+Data Subject Rights	Individuals have rights to access, correct, erase, or transfer their data.	Establish a process to handle data subject requests within prescribed timelines.
+Security Measures	Implement appropriate technical and organizational safeguards.	Use encryption, role-based access, firewalls, and regular penetration testing.
+Data Breach Notification	Report data breaches promptly to the Data Protection Board and affected individuals.	Create and test an Incident Response Plan.
+Accountability	Demonstrate compliance through documentation, risk assessments, and audits.	Maintain detailed records, policies, and training logs.
+
+9.Students needs to explore ethical considerations in data privacy, such as the balance between privacy and security, the impact of data collection and analysis on marginalized communities, and the role of data ethics in technology development.
+
+Data privacy is not only a legal obligation but also an ethical responsibility. As societies become increasingly data-driven, questions of fairness, consent, accountability, and human dignity become central. Ethical considerations ensure that the collection and use of data respect individual rights and promote social good.
+
+Balancing Privacy and Security
+
+The relationship between privacy and security presents one of the most significant ethical challenges in the digital era. While security focuses on protecting information systems from unauthorized access, breaches, or corruption, privacy emphasizes an individual’s right to control their personal information. Ethically, organizations must strike a balance so that efforts to enhance security do not unjustly infringe upon personal privacy.
+Security mechanisms such as intrusion detection, configuration management, and network monitoring can protect sensitive data but may also require inspecting personal information, which risks violating privacy. For instance, scanning all network traffic to identify malware improves cybersecurity but can expose private communications. The ethical principle of proportionality demands that such actions be limited to what is necessary and justified for protection.
+Privacy and security share overlapping goals—accountability, integrity, confidentiality, and data destruction—but differ in focus. Security safeguards systems, while privacy safeguards people. Ethical governance therefore requires transparency, informed consent, and respect for the purpose for which data was originally collected.
+Furthermore, excessive privacy controls can hinder security visibility, while intrusive surveillance can erode trust and autonomy. The ethical approach is to employ privacy by design, using measures like anonymization, minimal data collection, and oversight mechanisms to ensure both safety and dignity.
+Ultimately, ethical data management requires recognizing that privacy and security are not opposing forces but complementary principles essential to protecting both information and individual rights in a responsible, trustworthy digital environment.
+
+Impact of Data Collection and Analysis on Marginalized Communities
+
+Ethical Concern
+Data-driven technologies (AI, analytics, biometrics) can unintentionally perpetuate inequality or discrimination if they reflect existing societal biases. Marginalized groups often face over-surveillance, under-representation, or exploitation in data ecosystems.
+
+Examples
+Facial recognition systems perform less accurately on darker skin tones, leading to misidentification or unfair treatment.
+Predictive analytics in education may disadvantage students from lower socioeconomic backgrounds if historical data reflects structural inequalities.
+Health data collection might exclude rural populations, resulting in biased health policies.
+
+Ethical Implications
+Data bias reinforces stereotypes and systemic discrimination.
+Lack of informed consent in vulnerable populations violates autonomy and dignity.
+Digital divide leaves certain communities without control over their data.
+
+Ethical Remedies
+Conduct Bias and Fairness Impact Assessments before deploying data systems.
+Ensure representation and inclusivity in datasets.
+Provide community consultation and informed consent, especially when dealing with sensitive demographic data.
+Promote data justice — equitable access, benefit, and protection across all communities.
+
+The Role of Data Ethics in Technology Development
+
+Why Data Ethics Matters
+Data ethics guides developers, researchers, and organizations in making morally sound decisions when designing and using technology. Legal compliance (like DPDPA or GDPR) defines the minimum standard, but ethics goes beyond law — emphasizing what is right, not just what is legal.
+
+Core Principles of Data Ethics
+Autonomy – Respect individuals’ right to make informed choices about their data.
+Beneficence – Use data for societal benefit without causing harm.
+Justice – Ensure fairness and equal treatment for all groups.
+Non-maleficence – Avoid causing harm through misuse, bias, or breach of data.
+Transparency – Make data practices clear, understandable, and accountable.
+
+Ethical Technology Practices
+Privacy by Design: Embed privacy into systems from the start (default data minimization, encryption, consent controls).
+Explainable AI: Algorithms that provide transparent reasoning for their decisions.
+Ethical Review Boards: Internal or external ethics committees reviewing data-driven projects.
+Responsible Innovation: Anticipating potential misuse or societal harm before technology deployment.
+
+Example
+When developing an AI-based student monitoring system, developers should:
+- Ensure consent from parents and students.
+- Avoid collecting unnecessary personal data.
+- Disclose how data will be analyzed and stored.
+- Regularly review ethical implications and update policies accordingly
